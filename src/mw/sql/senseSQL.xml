@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+ 
+<mapper namespace="sense">
+
+	<!-- 메인 동영상 / 메인페이지/ 랜덤 카테고리 출력 후 해당 카테고리인 랜덤 영상을 출력-->
+	<select id="mainVideo" resultType="senseDTO">
+			<!-- DB main_set의 값이 1 일때, 메인 -->
+	<![CDATA[
+		select * from (
+		   select * from mwsense where main_set=1 and sense_category=(
+		       select sense_detail_category from 
+		            (select * from mwsense_category order by dbms_random.value)
+		        where rownum <= 1
+		    )
+		) where rownum <= 1 		
+		]]>	<!-- <= 등호 처리  -->
+	</select>
+	
+	<!-- 메인 리스트 출력 / 메인페이지-->
+	<select id="mainList" resultType="senseDTO">
+		select num, sense_category, sense_title, sense_content, sense_url, sense_thumbnail, readcount from mwsense where main_set=1 <!-- DB main_set의 값이 1 일때, 메인 -->
+	</select>
+
+	<!-- 카테고리 선택시 / 메인페이지-->	
+	<select id="categorySelect" resultType="senseDTO" parameterType="int">
+		select * from mwsense where sense_category=(
+				select sense_detail_category from mwsense_category where num=#{num} 
+			)
+		order by num desc
+	</select>
+	
+	<!-- 디테일 비디오 변경 - 메인 영상을 변경해줌 -->
+	<select id="senseDetailVideo" resultType="senseDTO" parameterType="int">
+		select * from mwsense where num=#{num}
+	</select>
+	
+	<!-- 디테일 페이지/ 수정 페이지 -->
+	<select id="select" resultType="senseDTO" parameterType="int">
+		select * from mwsense where num=#{num}
+	</select>
+	
+	<!-- 조회수 변경 -->
+	<update id="count" parameterType="int">
+		update mwsense set readcount=readcount+1 where num=#{num}
+	</update>	
+	
+	<!-- 조회수 출력-->
+	<select id="readcount" resultType="int" parameterType="int">
+		select readcount from mwsense where num=#{num}
+	</select>
+	
+	
+	<!-- 카테고리 리스트 / 센스 입력시  -->
+	<select id="category" resultType="sensecategoryDTO">
+		select * from mwsense_category order by num asc
+	</select>
+	
+	<!-- 센스 NUM값 최댓값 빼기 -->
+	<select id="senseMaxNum" resultType="int">
+		select max(num) from mwsense
+	</select>
+		
+	<!-- 센스 직접 입력 -->
+	<insert id="insert" parameterType="senseDTO">
+		insert into mwsense values (
+			#{num}, 
+			#{main_set},
+			#{sense_category},
+			#{sense_title},
+			#{sense_content},
+			#{sense_url}, 
+			#{sense_thumbnail},
+			#{readcount})
+	</insert>	
+	
+	<!-- ID confirm -->
+	<select id="confirmId" resultType="int" parameterType="String">
+	</select>
+	
+	<!-- PW confirm -->
+	<select id="confirmPassword" resultType="int" parameterType="hashMap">
+		select count(*) from mwmember where id=#{id} and pw=#{pw}
+	</select>
+	
+	<!-- 센스 직접 입력 확인 -->
+	<select id="insertCheck" resultType="int" parameterType="senseDTO">
+		select count(*) from mwsense where sense_url=#{sense_url} or sense_thumbnail=#{sense_thumbnail}
+	</select>
+	
+	<!-- 수정을 위한확인 -->
+	<select id="check" resultType="int" parameterType="senseDTO">
+		select count(*) from mwsense where num=#{num}
+	</select>
+	
+	<!-- 센스 게시글 수정 -->
+	<update id="senseModify" parameterType="senseDTO">
+		update mwsense
+		<trim prefix="set" suffixOverrides=",">
+			<if test="num != null">num=#{num},</if>
+			<if test="main_set !=null">main_set=#{main_set},</if>
+			<if test="sense_category != null">sense_category=#{sense_category},</if>
+			<if test="sense_title != null">sense_title=#{sense_title},</if>
+			<if test="sense_content != null">sense_content=#{sense_content},</if>
+			<if test="sense_url != null">sense_url=#{sense_url},</if>
+			<if test="sense_thumbnail != null">sense_thumbnail=#{sense_thumbnail}</if>
+		</trim>
+		where num=#{num}
+	</update>
+		
+	<!-- 센스 삭제 -->
+	<select id="senseDelete" parameterType="int">
+		delete from mwsense where num=#{num}
+	</select>
+	
+	<!-- 센스 삭제 확인 -->
+	<select id="senseDeleteCheck" resultType="int" parameterType="int">
+		select count(*) from mwsense where num=#{num}
+	</select>
+	
+	<!-- 스크랩 메모 -->
+	<select id="senseMemo" resultType="senseDTO" parameterType="int">
+		select * from mwsense where num=#{num}
+	</select>
+	
+	<!-- 마이스크랩 메인 -->
+	<select id="myscrap" resultType="scrapDTO" parameterType="String">
+		select * from mwscrap where id=#{id}
+	</select>
+	
+	<!-- 마이스크랩 비디오 -->
+	<select id="myVideo" resultType="scrapDTO" parameterType="hashMap">
+		select * from mwscrap where id=#{id} and num=#{num}
+	</select>
+	
+	<!-- 마이스크랩 디테일 -->
+	<select id="myDetail" resultType="scrapDTO" parameterType="hashMap">
+		select * from mwscrap where  id=#{id} and num=#{num}
+	</select>
+		
+	<!-- 스크랩 저장 -->
+	<insert id="scrap" parameterType="hashMap">
+		insert into mwscrap values(
+			mwscrap_seq.nextval,
+			#{scrap.num},
+			#{id},
+			#{scrap.sense_category},
+			#{scrap.sense_title},
+			#{scrap.sense_url},
+			#{memo})
+	</insert>
+	
+	<!-- 카테고리 선택시 / 스크랩페이지-->	
+	<select id="myscrapCategory" resultType="scrapDTO" parameterType="hashMap">
+		select * from mwscrap where id=#{id} and sense_category=(
+				select sense_detail_category from mwsense_category where num=#{num} 
+			)
+		order by num desc
+	</select>
+	
+	<!-- 스크랩 삭제 -->
+	<delete id="scrapDelete" parameterType="hashMap">
+		delete from mwscrap where num=#{num} and id=#{id}
+	</delete>
+														
+</mapper>

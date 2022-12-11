@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="account_card">
+
+	<!-- 카드 정보 가져오기 -->
+	<select id="card_select" resultType="cardDTO">
+		select * from mwCard
+	</select>
+	
+	<!-- 카드사 및 카드이름, 카드이미지번호-->
+	<select id="card_cn" resultType="cardDTO" parameterType="String">
+		select distinct company,card_name,img_cnt from mwCard where company = #{value}
+	</select>
+	
+	<!-- 카드사 -->
+	<select id="card_company" resultType="cardDTO">
+		select distinct company from mwCard
+	</select>
+	
+	<!-- 카드등록 -->
+	<insert id="card_insert" parameterType="reg_cardDTO">
+		insert into mwRegisterCard values(reg_card_seq.nextval,#{id},#{card_company},#{card_name},#{card_nickname},#{account_company},#{account_num},#{balance})
+	</insert>
+	
+	<!-- 계좌등록 -->
+	<insert id="account_insert" parameterType="reg_accountDTO">
+		insert into mwRegisterAccount values(reg_account_seq.nextval,#{id},#{account_company},#{account_num},#{balance})
+	</insert>
+	
+	<!-- 카드 정보 이미지 DB insert -->
+	<insert id="card_img_insert" parameterType="card_imgDTO">
+		insert into card_img values(card_seq.nextval,#{img_cnt},#{company},#{path})
+	</insert>
+	
+	<!-- 카드명에 따른 카드혜택 -->
+	<select id="card_benefit" resultType="cardDTO" parameterType="String">
+		select * from mwCard where card_name = #{card_name}
+	</select> 
+	
+	<!-- 카드이미지 -->
+ 	<select id="card_img" resultType="String" parameterType="String">
+		select distinct path from card_img, mwCard where card_img.company = mwCard.company and card_img.img_cnt = mwCard.img_cnt 
+		and mwCard.card_name=#{card_name}
+	</select>
+	
+	<!-- 나의 카드 정보 -->
+	<select id="mycard" resultType="reg_cardDTO" parameterType="String">
+		select * from mwRegisterCard where id=#{id}
+	</select>
+
+	<!-- 나의 계좌 정보 -->
+	<select id="myaccount" resultType="reg_accountDTO" parameterType="String">
+		select * from mwRegisterAccount where id=#{id}
+	</select>
+	
+	<!-- 나의 카드 삭제 -->
+	<delete id="mycard_del" parameterType="hashmap">
+		delete from mwRegisterCard where id=#{id} and num=#{num}
+	</delete>
+	
+	<!-- 나의 계좌 삭제 -->
+	<delete id="myaccount_del" parameterType="hashmap">
+		delete from mwRegisterAccount where id=#{id} and num=#{num}
+	</delete>
+	
+	<!-- 수정할 카드에 대한 정보 -->
+	<select id="getCard" resultType="reg_cardDTO">
+		select * from mwRegisterCard where num=#{num}
+	</select>
+	
+	<!-- 카드에대한 계좌 수정 -->
+	<update id="card_update" parameterType="reg_cardDTO">
+		update mwRegisterCard set card_nickname=#{card_nickname},account_company=#{account_company},account_num=#{account_num} 
+		where num=#{num}
+	</update>
+	
+	<!-- 등록된 계좌 가져오기 -->
+	<select id="getAccount" resultType="reg_cardDTO">
+		select distinct account_company from mwRegisterAccount
+	</select>
+	
+	<!-- 등록된 카드회사에 따른 계좌 가져오기 -->
+	<select id="getAccount_num" resultType="reg_accountDTO" parameterType="String">
+		select account_num from mwRegisterAccount where account_company=#{account_company}	
+	</select>
+	
+	<!-- 나의 카드혜택 보기 -->
+	<select id="my_ac_benefit" resultType="cardDTO" parameterType="String">
+		select * from mwCard where card_name in (select card_name from mwRegisterCard where card_name like '%' || #{card_name} || '%') 
+	</select>
+
+	<!-- 계좌중복확인 -->
+	<select id="check_account" resultType="int" parameterType="hashmap">
+		select count(*) from mwRegisterAccount where id=#{id} and account_num=#{account_num} and account_company=#{account_company}
+	</select>
+	
+	<!-- 카드에 대한 연결된 계좌 중복확인 -->
+	<select id="check_card" resultType="int" parameterType="hashmap">
+		select count(*) from mwRegisterCard where id=#{id} and card_name=#{card_name} and account_num=#{account_num}
+	</select>
+	
+	<!-- 등록된 카드 이미지 및 이름(혜택페이지 따로 만들기 위함) -->
+	<select id="mycardList" resultType="mycard_imgDTO" parameterType="String">
+		select distinct mwCard.img_cnt,mwCard.company,mwRegisterCard.card_name,path from mwRegisterCard,mwCard,card_img
+		where mwRegisterCard.card_name = mwCard.card_name and card_img.img_cnt = mwCard.img_cnt and card_img.company = mwRegisterCard.card_company 
+		and mwRegisterCard.id=#{id}
+	</select>
+	
+	<!-- 20대 카드 등록 순위(top3) -->
+	<select id="20_cardRegisterCount" resultType="reg_cardDTO">
+		<![CDATA[select card_company,card_name from (select card_company,card_name,count(card_name) from(select mwRegisterCard.card_name,mwRegisterCard.card_company,trunc(MONTHS_BETWEEN(sysdate,to_date(birth_y,'yyyy'))/12+1) as age
+		from mwmember,mwRegisterCard
+		where mwmember.id = mwRegisterCard.id) where age between 20 and 30 group by card_company,card_name order by count(card_name) desc) where rownum<=3]]>
+	</select>
+	
+	<!-- 30대 카드 등록 순위(top3) -->
+	<select id="30_cardRegisterCount" resultType="reg_cardDTO">
+		<![CDATA[select card_company,card_name from (select card_company,card_name,count(card_name) from(select mwRegisterCard.card_name,mwRegisterCard.card_company,trunc(MONTHS_BETWEEN(sysdate,to_date(birth_y,'yyyy'))/12+1) as age
+		from mwmember,mwRegisterCard
+		where mwmember.id = mwRegisterCard.id) where age between 30 and 40 group by card_company,card_name order by count(card_name) desc) where rownum<=3]]>
+	</select>	
+
+	<!-- 40대 카드 등록 순위(top3) -->
+	<select id="40_cardRegisterCount" resultType="reg_cardDTO">
+		<![CDATA[select card_company,card_name from (select card_company,card_name,count(card_name) from(select mwRegisterCard.card_name,mwRegisterCard.card_company,trunc(MONTHS_BETWEEN(sysdate,to_date(birth_y,'yyyy'))/12+1) as age
+		from mwmember,mwRegisterCard
+		where mwmember.id = mwRegisterCard.id) where age between 40 and 50 group by card_company,card_name order by count(card_name) desc) where rownum<=3]]>
+	</select>	
+		
+</mapper>

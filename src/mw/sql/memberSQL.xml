@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+ 
+<mapper namespace="member">
+		
+	<select id="loginCheck" resultType="int" parameterType="memberDTO"> <!--로그인시 id pw 비교 -->
+		select count(*) from mwMember where id=#{id} and pw=#{pw}
+	</select>
+
+	<insert id="insert" parameterType="memberDTO"> <!--회원가입 데이터 삽입 -->
+		insert into mwMember values(#{id},#{pw},#{name},#{gender},#{birth_y},#{birth_m},#{birth_d},#{tel},#{phone1},#{phone2},#{phone3},#{zon},#{street},#{addr},#{email1},#{email2},sysdate)
+	</insert>
+	
+	<select id="memberCheck" resultType="int" parameterType="String"> <!--아이디 중복확인 -->
+		select count(*) from mwMember where id = #{id}
+	</select>
+	
+	<select id="modifyCheck" resultType="memberDTO" parameterType="String"> <!-- 정보수정 전 id 비교 -->
+  		select * from mwMember where id=#{id} 
+  	</select>
+  	
+  	<update id="updateMember" parameterType="memberDTO"> <!-- 정보 수정 데이터 삽입 -->
+  		update mwMember set pw=#{pw},name=#{name},tel=#{tel},phone1=#{phone1},phone2=#{phone2},phone3=#{phone3},zon=#{zon},street=#{street},addr=#{addr},email1=#{email1},email2=#{email2} where id=#{id}
+  	</update>
+  	
+  	<select id="deleteCheck" resultType="int" parameterType="hashmap"> <!--회원 탈퇴 전 id pw 비교 -->
+		select count(*) from mwMember where id=#{id} and pw=#{pw}
+	</select>
+  	
+  	<select id="deleteSelect" resultType="memberDTO" parameterType="String"> <!--탈퇴 id의 데이터 찾기(탈퇴회원 List를 작성하기 위함)-->
+  		select * from mwMember where id=#{id} 
+  	</select>
+  	
+  	<insert id="deleteMemList" parameterType="deletememListDTO" > <!--탈퇴회원 List DB에 삽입  -->
+  		insert into mw_deleteMember values(mw_deleteMember_seq.nextval,#{id},#{name},#{gender},#{birth_y},#{birth_m},#{birth_d},#{tel},#{phone1},#{phone2},#{phone3},#{reason},sysdate)
+  	</insert>
+  	
+  	<delete id="deleteMem" parameterType="String"> <!-- 회원 DB에서 삭제 -->
+  		delete from mwMember where id=#{id}
+  	</delete>
+  	
+  	
+	<select id="selectMemList" parameterType="memberDTO" resultType="memberDTO" ><!-- 관리자 회원 리스트 -->
+		select * from mwMember 
+	</select>
+
+	<select id="memSearch" parameterType="hashmap" resultType="memberDTO" > <!-- 회원 검색 -->
+		select * from mwMember where ${keyField} like '%' || #{keyWord} || '%'
+	</select>
+
+</mapper>

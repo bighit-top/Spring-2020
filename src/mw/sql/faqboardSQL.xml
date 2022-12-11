@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="faqboard">
+
+	<insert id="insertBoard" parameterType="faqboardDTO"> <!-- 유저게시판 글쓰기 -->
+		insert into mwFaQBoard values(mwFaQBoard_seq.nextval,#{subject},#{content},#{pw},#{readcount},sysdate,#{id})
+	</insert>
+	
+	<select id="getArticles" resultType="faqboardDTO" parameterType="hashmap" > <!-- 유저게시판 List -->
+		<![CDATA[select * from (select id,faq_num,subject,content,pw,readcount ,reg,rownum r from(select *  from mwFaQBoard order by faq_num desc) order by faq_num desc) where r >= #{start} and r <= #{end} ]]>
+	</select>
+	
+	<select id="getCount" resultType="int" > <!-- 유저게시판 DB 총 게시글 -->
+		select count(*) from mwFaQBoard
+	</select>
+	
+	<select id="getContent" resultType="faqboardDTO" parameterType="int">  <!-- 유저게시글 데이터 찾기-->
+		select * from mwFaQBoard where faq_num=#{faq_num}
+	</select>
+	
+	<update id="upCount" parameterType="int"> <!-- 조회수 증가 -->
+		update mwFaQBoard set readcount=readcount+1 where faq_num=#{faq_num}
+	</update> 
+	
+	<select id="DeleteCheck" resultType="int" parameterType="hashmap"> <!-- 유저게시글 삭제전 패스워드 비교 -->
+		select count(*) from mwFaQBoard where faq_num=#{faq_num} and pw=#{pw}
+	</select>
+	
+	<delete id="DeleteWriting" parameterType="String"> <!-- 유저게시글 삭제 -->
+		delete from mwFaQBoard where faq_num=#{faq_num}
+	</delete> 
+	
+	<select id="updateSelect" resultType="faqboardDTO" parameterType="String"> <!--유저게시글 수정할 데이터 찾기 -->
+		select * from mwFaQBoard where faq_num=#{faq_num}
+	</select>
+	
+	<select id="updateCheck" resultType="int" parameterType="hashmap"> <!-- 유저게시글 수정전 패스워드 비교 -->
+		select count(*) from mwFaQBoard where faq_num=#{faq_num} and pw=#{pw}
+	</select>
+	
+	<update id="updateContent" parameterType="faqboardDTO"> <!-- 유저게시글 수정할 데이터 삽입 -->
+		update mwFaQBoard set subject=#{subject},content=#{content} where faq_num=#{faq_num}
+	</update>
+	
+	
+	<!--하단부터 관리자 작성 게시판 -->
+	
+	<insert id="insertQwrite" parameterType="faqmainboardDTO">  <!-- FAQ 게시글 작성 -->
+		insert into mwFaqMainBoard values(mwFaqMainBoard_seq.nextval,#{nickname},#{qsubject},#{qcontent},sysdate,#{qreadcount},#{q_id})
+	</insert>
+	
+	<select id="selectMainFaq" resultType="faqmainboardDTO" parameterType="faqmainboardDTO"> <!-- FAQ 게시판 List -->
+		<![CDATA[select * from (select qnum,nickname,qsubject,qcontent,reg,qreadcount,q_id,rownum r from(select *  from mwfaqMainBoard order by qnum desc) order by qnum desc)]]>
+	</select>
+	
+	<select id="getQcount" resultType="int"> <!-- FAQ 게시글 DB 총 수량 -->
+		select count(*) from mwFaqMainBoard
+	</select>
+	
+	<select id="getQcontent" resultType="faqmainboardDTO" parameterType="int"> <!-- FAQ 게시글 찾기 -->
+		select * from mwFaqMainBoard where qnum=#{qnum}
+	</select>
+	
+	<update id="upQcount" parameterType="int"> <!-- 조회수 증가 -->
+		update mwFaqMainBoard set qreadcount=qreadcount+1 where qnum=#{qnum}
+	</update> 
+	
+	<update id="updateQcontnet" parameterType="faqmainboardDTO"> <!-- FAQ 게시글 수정데이터 삽입 -->
+		update mwFaqMainBoard set qsubject=#{qsubject},qcontent=#{qcontent} where qnum=#{qnum}
+	</update>
+	
+	<delete id="DeleteQcontent" parameterType="int">  <!--FAQ 게시글 삭제 -->
+		delete from mwFaqMainBoard where qnum=#{qnum}
+	</delete>
+	
+	
+	<select id="DeleteQcheck" resultType="int" parameterType="hashmap"> <!-- FAQ 게시글 삭제전 id 비교 -->
+		select count(*) from mwFaqMainBoard where qnum=#{qnum} and q_id=#{q_id}
+	</select>
+	
+	<select id="mylistboard" resultType="int" >  <!-- 내가쓴 게시글 List -->
+		select count(*) from mwFaQBoard where id=#{id}
+	</select>
+	                                                                                                                                                                                     
+	<select id="mygetArticles" resultType="faqboardDTO" parameterType="hashmap"> <!--  내가 쓴 게시글 List  -->                                                                                  
+		<![CDATA[select * from (select faq_num,id,subject,content,pw,readcount ,reg,rownum r from
+							   (select *  from mwFaQBoard where id=#{id} order by faq_num desc))
+							    where r >= #{start} and r <= #{end} ]]>
+	</select>
+	
+	<delete id="DeleteAdminfaq" parameterType="int">
+		delete from mwFaqBoard where faq_num=#{faq_num}
+	</delete>
+	
+</mapper>
+
